@@ -14,7 +14,7 @@ impl InstanceFilterUtils {
     pub fn default_instance_filter(
         all_instances: Vec<Arc<Instance>>,
         metadata: Option<ServiceMetadata>,
-        filter_headlthy: bool,
+        filter_healthy: bool,
     ) -> Vec<Arc<Instance>> {
         if let Some(metadata) = metadata {
             let original_total = all_instances.len();
@@ -46,7 +46,7 @@ impl InstanceFilterUtils {
                 return instances;
             }
         };
-        if filter_headlthy {
+        if filter_healthy {
             Self::filter_healthy_instances(all_instances)
         } else {
             all_instances

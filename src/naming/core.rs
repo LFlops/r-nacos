@@ -1300,7 +1300,8 @@ async fn query_healthy_instances() {
         "empty cluster list:{}",
         serde_json::to_string(&items).unwrap()
     );
-    tokio::time::sleep(Duration::from_millis(16000)).await;
+    // 等待 unhealthy 的时间 > naming_health_timeout + 3000
+    tokio::time::sleep(Duration::from_millis(18000)).await;
     naming.time_check();
     println!("-------------");
     let items = naming.get_instance_list(&key, "", false);
@@ -1309,6 +1310,7 @@ async fn query_healthy_instances() {
         "empty cluster list:{}",
         serde_json::to_string(&items).unwrap()
     );
+    // 等待 instance 被移出的时间 > naming_instance_timeout - 等待 unhealthy 的时间
     tokio::time::sleep(Duration::from_millis(16000)).await;
     naming.time_check();
     println!("-------------");
