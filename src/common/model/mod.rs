@@ -86,7 +86,7 @@ pub struct PageResult<T> {
     pub list: Vec<T>,
 }
 
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, PartialEq, Deserialize, Serialize)]
 pub struct UserSession {
     pub username: Arc<String>,
     pub nickname: Option<String>,
@@ -97,7 +97,7 @@ pub struct UserSession {
     pub refresh_time: u32,
 }
 
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, PartialEq, Deserialize, Serialize)]
 pub struct TokenSession {
     pub username: Arc<String>,
     pub roles: Vec<Arc<String>>,

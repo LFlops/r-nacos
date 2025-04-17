@@ -45,7 +45,7 @@ where
 ///
 /// 数据权限组
 /// 支持分别设置黑白名单
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone,PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PrivilegeGroup<T>
 where
