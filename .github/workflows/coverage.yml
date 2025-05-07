@@ -22,6 +22,8 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
+      - name: Install cargo-tarpaulin
+        run: cargo install cargo-tarpaulin
 
       - name: Run tests and generate coverage report
         run: cargo tarpaulin --out Html
