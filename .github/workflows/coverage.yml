@@ -6,7 +6,8 @@ on:
       - '**'
   pull_request:
     branches:
-      - ${{ github.ref_name }}
+      - '**'
+
 
 jobs:
   coverage:
