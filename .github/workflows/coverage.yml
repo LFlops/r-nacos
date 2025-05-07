@@ -1,0 +1,22 @@
+   name: Run tests and upload coverage
+
+   on:
+     push:
+       branches: [ main ]
+     pull_request:
+       branches: [ main ]
+
+   jobs:
+     coverage:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v3
+         - name: Build and test with tarpaulin
+           uses: xd009642/tarpaulin-action@v0.2
+           with:
+             output-name: coverage
+         - name: Upload coverage to Codecov
+           uses: codecov/codecov-action@v3
+           with:
+             file: ./coverage.txt
+   

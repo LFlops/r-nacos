@@ -180,113 +180,117 @@ impl From<CacheValue> for CacheItemDo {
     }
 }
 
-#[test]
-fn test_convert_cache_value_into_cache_item_do() {
-    // Test for CacheValue::String
-    let string_value = "test_string".to_string();
-    let cache_value: CacheValue = CacheValue::String(Arc::new(string_value));
-    let cache_item_do: CacheItemDo = cache_value.into();
-    assert_eq!(cache_item_do.cache_type, 1);
-    assert_eq!(cache_item_do.timeout, 0);
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    // Test for CacheValue::Map
-    let map: HashMap<String, String> = HashMap::new();
-    let cache_value: CacheValue = CacheValue::Map(Arc::new(map));
-    let cache_item_do: CacheItemDo = cache_value.into();
-    assert_eq!(cache_item_do.cache_type, 2);
-    assert_eq!(cache_item_do.timeout, 0);
+    #[test]
+    fn test_convert_cache_value_into_cache_item_do() {
+        // Test for CacheValue::String
+        let string_value = "test_string".to_string();
+        let cache_value: CacheValue = CacheValue::String(Arc::new(string_value));
+        let cache_item_do: CacheItemDo = cache_value.into();
+        assert_eq!(cache_item_do.cache_type, 1);
+        assert_eq!(cache_item_do.timeout, 0);
 
-    // Test for CacheValue::UserSession
-    let user_session = UserSession {
-        username: Arc::new("".to_string()),
-        nickname: Some("".to_string()),
-        roles: Vec::new(),
-        namespace_privilege: None,
-        extend_infos: HashMap::new(),
-        refresh_time: 0,
-    };
-    let cache_value: CacheValue = CacheValue::UserSession(Arc::new(user_session));
-    let cache_item_do: CacheItemDo = cache_value.into();
-    assert_eq!(cache_item_do.cache_type, 3);
-    assert_eq!(cache_item_do.timeout, 0);
+        // Test for CacheValue::Map
+        let map: HashMap<String, String> = HashMap::new();
+        let cache_value: CacheValue = CacheValue::Map(Arc::new(map));
+        let cache_item_do: CacheItemDo = cache_value.into();
+        assert_eq!(cache_item_do.cache_type, 2);
+        assert_eq!(cache_item_do.timeout, 0);
 
-    // Test for CacheValue::ApiTokenSession
-    let token_session = TokenSession {
-        username: Arc::new("".to_string()),
-        roles: Vec::new(),
-        extend_infos: HashMap::new(),
-    };
-    let cache_value: CacheValue = CacheValue::ApiTokenSession(Arc::new(token_session));
-    let cache_item_do: CacheItemDo = cache_value.into();
-    assert_eq!(cache_item_do.cache_type, 4);
-    assert_eq!(cache_item_do.timeout, 0);
-}
+        // Test for CacheValue::UserSession
+        let user_session = UserSession {
+            username: Arc::new("".to_string()),
+            nickname: Some("".to_string()),
+            roles: Vec::new(),
+            namespace_privilege: None,
+            extend_infos: HashMap::new(),
+            refresh_time: 0,
+        };
+        let cache_value: CacheValue = CacheValue::UserSession(Arc::new(user_session));
+        let cache_item_do: CacheItemDo = cache_value.into();
+        assert_eq!(cache_item_do.cache_type, 3);
+        assert_eq!(cache_item_do.timeout, 0);
 
-#[test]
-fn test_convert_cache_item_do_into_cache_value() {
-    // Test for CacheType::String
-    let cache_item_do = CacheItemDo {
-        cache_type: 1,
-        data: "test_string".as_bytes().to_vec(),
-        timeout: 0,
-    };
-    let cache_type = cache_item_do.cache_type as u8;
-    let cache_value: CacheValue = cache_item_do.try_into().unwrap();
-    assert_eq!(cache_type, cache_value.get_cache_type().get_type_data());
-    if let CacheValue::String(s) = cache_value {
-        assert_eq!(s.as_str(), "test_string");
+        // Test for CacheValue::ApiTokenSession
+        let token_session = TokenSession {
+            username: Arc::new("".to_string()),
+            roles: Vec::new(),
+            extend_infos: HashMap::new(),
+        };
+        let cache_value: CacheValue = CacheValue::ApiTokenSession(Arc::new(token_session));
+        let cache_item_do: CacheItemDo = cache_value.into();
+        assert_eq!(cache_item_do.cache_type, 4);
+        assert_eq!(cache_item_do.timeout, 0);
     }
+    #[test]
+    fn test_convert_cache_item_do_into_cache_value() {
+        // Test for CacheType::String
+        let cache_item_do = CacheItemDo {
+            cache_type: 1,
+            data: "test_string".as_bytes().to_vec(),
+            timeout: 0,
+        };
+        let cache_type = cache_item_do.cache_type as u8;
+        let cache_value: CacheValue = cache_item_do.try_into().unwrap();
+        assert_eq!(cache_type, cache_value.get_cache_type().get_type_data());
+        if let CacheValue::String(s) = cache_value {
+            assert_eq!(s.as_str(), "test_string");
+        }
 
-    // Test for CacheType::Map
-    let map: HashMap<String, String> = HashMap::new();
-    let cache_item_do = CacheItemDo {
-        cache_type: 2,
-        data: serde_json::to_vec(&map).unwrap(),
-        timeout: 0,
-    };
-    let cache_type = cache_item_do.cache_type as u8;
-    let cache_value: CacheValue = cache_item_do.try_into().unwrap();
-    assert_eq!(cache_type, cache_value.get_cache_type().get_type_data());
-    if let CacheValue::Map(m) = cache_value {
-        assert_eq!(*m, map);
-    }
+        // Test for CacheType::Map
+        let map: HashMap<String, String> = HashMap::new();
+        let cache_item_do = CacheItemDo {
+            cache_type: 2,
+            data: serde_json::to_vec(&map).unwrap(),
+            timeout: 0,
+        };
+        let cache_type = cache_item_do.cache_type as u8;
+        let cache_value: CacheValue = cache_item_do.try_into().unwrap();
+        assert_eq!(cache_type, cache_value.get_cache_type().get_type_data());
+        if let CacheValue::Map(m) = cache_value {
+            assert_eq!(*m, map);
+        }
 
-    // Test for CacheType::UserSession
-    let user_session = UserSession {
-        username: Arc::new("".to_string()),
-        nickname: Some("".to_string()),
-        roles: Vec::new(),
-        namespace_privilege: None,
-        extend_infos: HashMap::new(),
-        refresh_time: 0,
-    };
-    let cache_item_do = CacheItemDo {
-        cache_type: 3,
-        data: serde_json::to_vec(&user_session).unwrap(),
-        timeout: 0,
-    };
-    let cache_type = cache_item_do.cache_type as u8;
-    let cache_value: CacheValue = cache_item_do.try_into().unwrap();
-    assert_eq!(cache_type, cache_value.get_cache_type().get_type_data());
-    if let CacheValue::UserSession(s) = cache_value {
-        assert_eq!(*s, user_session);
-    }
+        // Test for CacheType::UserSession
+        let user_session = UserSession {
+            username: Arc::new("".to_string()),
+            nickname: Some("".to_string()),
+            roles: Vec::new(),
+            namespace_privilege: None,
+            extend_infos: HashMap::new(),
+            refresh_time: 0,
+        };
+        let cache_item_do = CacheItemDo {
+            cache_type: 3,
+            data: serde_json::to_vec(&user_session).unwrap(),
+            timeout: 0,
+        };
+        let cache_type = cache_item_do.cache_type as u8;
+        let cache_value: CacheValue = cache_item_do.try_into().unwrap();
+        assert_eq!(cache_type, cache_value.get_cache_type().get_type_data());
+        if let CacheValue::UserSession(s) = cache_value {
+            assert_eq!(*s, user_session);
+        }
 
-    // Test for CacheType::ApiTokenSession
-    let token_session = TokenSession {
-        username: Arc::new("".to_string()),
-        roles: Vec::new(),
-        extend_infos: HashMap::new(),
-    };
-    let cache_item_do = CacheItemDo {
-        cache_type: 4,
-        data: serde_json::to_vec(&token_session).unwrap(),
-        timeout: 0,
-    };
-    let cache_type = cache_item_do.cache_type as u8;
-    let cache_value: CacheValue = cache_item_do.try_into().unwrap();
-    assert_eq!(cache_type, cache_value.get_cache_type().get_type_data());
-    if let CacheValue::ApiTokenSession(s) = cache_value {
-        assert_eq!(*s, token_session);
+        // Test for CacheType::ApiTokenSession
+        let token_session = TokenSession {
+            username: Arc::new("".to_string()),
+            roles: Vec::new(),
+            extend_infos: HashMap::new(),
+        };
+        let cache_item_do = CacheItemDo {
+            cache_type: 4,
+            data: serde_json::to_vec(&token_session).unwrap(),
+            timeout: 0,
+        };
+        let cache_type = cache_item_do.cache_type as u8;
+        let cache_value: CacheValue = cache_item_do.try_into().unwrap();
+        assert_eq!(cache_type, cache_value.get_cache_type().get_type_data());
+        if let CacheValue::ApiTokenSession(s) = cache_value {
+            assert_eq!(*s, token_session);
+        }
     }
 }

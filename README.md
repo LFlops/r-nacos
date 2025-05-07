@@ -1,5 +1,7 @@
 
 # r-nacos
+![Coverage Badge](https://img.shields.io/codecov/c/github/yourusername/yourrepo)
+   
 
 ## 简介
 
