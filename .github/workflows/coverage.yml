@@ -1,22 +1,36 @@
-   name: Run tests and upload coverage
+name: Coverage
 
-   on:
-     push:
-       branches: [ main ]
-     pull_request:
-       branches: [ main ]
+on:
+  push:
+    branches:
+      - ${{ github.ref_name }}
+  pull_request:
+    branches:
+      - ${{ github.ref_name }}
 
-   jobs:
-     coverage:
-       runs-on: ubuntu-latest
-       steps:
-         - uses: actions/checkout@v3
-         - name: Build and test with tarpaulin
-           uses: xd009642/tarpaulin-action@v0.2
-           with:
-             output-name: coverage
-         - name: Upload coverage to Codecov
-           uses: codecov/codecov-action@v3
-           with:
-             file: ./coverage.txt
-   
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust and dependencies
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Run tests and generate coverage report
+        run: cargo tarpaulin --out Html
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./tarpaulin-report.html
+          flags: unittests
+          fail_ci_if_error: true
+
+
+
