@@ -1,0 +1,56 @@
+// 用于生成 data_object.rs
+// pb-rs data_object.proto
+
+syntax = "proto3";
+
+package data_object;
+
+// 工具规范版本
+message ToolSpecVersionDo {
+  uint64 version = 1;
+  string parameters_json = 2;
+  string op_user = 3;
+  int64 update_time = 4;
+}
+
+// MCP 工具规范
+message McpToolSpecDo {
+  string namespace = 1;
+  string group = 2;
+  string tool_name = 3;
+  uint64 current_version = 4;
+  int64 create_time = 5;
+  string create_user = 6;
+  repeated ToolSpecVersionDo versions = 7;
+}
+
+// MCP 工具
+message McpToolDo {
+  string tool_name = 2;
+  string namespace = 3;
+  string group = 4;
+  uint64 version = 5;
+  string route_rule_json = 6;
+}
+
+message McpServerValueDo {
+  uint64 id = 1;
+  string description = 2;
+  repeated McpToolDo tools = 3;
+  string op_user = 4;
+  int64 update_time = 5;
+}
+
+message McpServerDo {
+  uint64 id = 1;
+  string namespace = 2;
+  string name = 3;
+  string description = 4;
+  repeated string auth_keys = 5;
+  int64 create_time = 6;
+  string create_user = 7;
+  McpServerValueDo current_value = 8;
+  McpServerValueDo release_value = 9;
+  repeated McpServerValueDo histories = 10;
+  string unique_key = 11;
+}

@@ -54,12 +54,12 @@ impl Instance {
 
     pub fn init(&mut self) {
         self.last_modified_millis = now_millis_i64();
-        if self.id.len() == 0 {
+        if self.id.is_empty() {
             self.generate_key();
         }
     }
 
-    pub fn check_vaild(&self) -> bool {
+    pub fn check_valid(&self) -> bool {
         if self.id.is_empty()
             && self.port == 0
             && self.service_name.is_empty()
@@ -202,7 +202,7 @@ impl Default for InstanceUpdateTag {
     }
 }
 
-#[derive(Debug, Clone, Default, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ServiceKey {
     pub namespace_id: Arc<String>,
     pub group_name: Arc<String>,
@@ -210,11 +210,11 @@ pub struct ServiceKey {
 }
 
 impl ServiceKey {
-    pub fn new(namespace_id: &str, group_name: &str, serivce_name: &str) -> Self {
+    pub fn new(namespace_id: &str, group_name: &str, service_name: &str) -> Self {
         Self {
             namespace_id: Arc::new(namespace_id.to_owned()),
             group_name: Arc::new(group_name.to_owned()),
-            service_name: Arc::new(serivce_name.to_owned()),
+            service_name: Arc::new(service_name.to_owned()),
         }
     }
 
@@ -297,6 +297,7 @@ impl InstanceShortKey {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum UpdateInstanceType {
     None,
     New,

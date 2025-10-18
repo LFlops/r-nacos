@@ -61,7 +61,7 @@ impl TransferHeaderDto {
         }
     }
 
-    pub fn to_do(&self) -> TransferHeader {
+    pub fn to_do(&self) -> TransferHeader<'_> {
         self.into()
     }
 
@@ -137,7 +137,7 @@ pub struct TransferRecordDto {
 }
 
 impl TransferRecordDto {
-    pub fn to_do(&self) -> TransferItem {
+    pub fn to_do(&self) -> TransferItem<'_> {
         self.into()
     }
 }
@@ -214,6 +214,7 @@ pub struct TransferBackupParam {
     pub config: bool,
     pub user: bool,
     pub cache: bool,
+    pub mcp: bool,
 }
 
 impl TransferBackupParam {
@@ -222,6 +223,7 @@ impl TransferBackupParam {
             config: true,
             user: true,
             cache: true,
+            mcp: true,
         }
     }
 }
@@ -241,6 +243,7 @@ pub struct TransferImportParam {
     pub config: bool,
     pub user: bool,
     pub cache: bool,
+    pub mcp: bool,
 }
 
 impl TransferImportParam {
@@ -249,6 +252,7 @@ impl TransferImportParam {
             config: true,
             user: true,
             cache: true,
+            mcp: true,
         }
     }
 }

@@ -1,5 +1,8 @@
 use crate::metrics::timeline::model::{TimelineQueryParam, TimelineQueryResponse};
 use crate::naming::model::{Instance, InstanceKey, InstanceUpdateTag, ServiceDetailDto};
+use crate::naming::service::SubscriberInfoDto;
+use crate::naming::service_index::ServiceQueryParam;
+use crate::openapi::mcp::model::JsonRpcRequest;
 use actix::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -47,6 +50,13 @@ pub enum NamingRouteRequest {
     MetricsTimelineQuery(TimelineQueryParam),
     SyncDistroClientInstances(HashMap<Arc<String>, HashSet<InstanceKey>>),
     QueryDistroInstanceSnapshot(Vec<InstanceKey>),
+    QueryServiceSubscriberPage(ServiceQueryParam),
+    McpMessages {
+        session_id: Arc<String>,
+        server_key: Arc<String>,
+        request: JsonRpcRequest,
+        headers: HashMap<String, String>,
+    },
 }
 
 impl NamingRouteRequest {
@@ -65,6 +75,8 @@ impl NamingRouteRequest {
             NamingRouteRequest::MetricsTimelineQuery(_) => "MetricsTimelineQuery",
             NamingRouteRequest::SyncDistroClientInstances(_) => "SyncDistroClientInstances",
             NamingRouteRequest::QueryDistroInstanceSnapshot(_) => "QueryDistroInstanceSnapshot",
+            NamingRouteRequest::QueryServiceSubscriberPage(_) => "QueryServiceSubscriberPage",
+            NamingRouteRequest::McpMessages { .. } => "McpMessages",
         }
     }
 }
@@ -73,6 +85,7 @@ impl NamingRouteRequest {
 pub enum NamingRouterResponse {
     None,
     MetricsTimeLineResponse(TimelineQueryResponse),
+    ServiceSubscribersPage((usize, Vec<SubscriberInfoDto>)),
 }
 
 #[derive(Message, Debug, Clone)]

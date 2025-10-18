@@ -3,15 +3,20 @@ use std::{collections::HashSet, sync::Arc, time::Duration};
 use crate::common::actor_utils::{create_actor_at_thread, create_actor_at_thread2};
 use crate::grpc::handler::RAFT_ROUTE_REQUEST;
 use crate::health::core::HealthManager;
+use crate::ldap::core::LdapManager;
+use crate::mcp::core::McpManager;
+use crate::mcp::sse_manage::SseStreamManager;
 use crate::metrics::core::MetricsManager;
 use crate::namespace::NamespaceActor;
 use crate::raft::cluster::route::RaftRequestRoute;
 use crate::raft::filestore::core::FileStore;
 use crate::raft::filestore::raftapply::StateApplyManager;
-use crate::raft::filestore::raftdata::RaftDataWrap;
+use crate::raft::filestore::raftdata::RaftDataHandler;
 use crate::raft::filestore::raftindex::RaftIndexManager;
 use crate::raft::filestore::raftlog::RaftLogManager;
 use crate::raft::filestore::raftsnapshot::RaftSnapshotManager;
+use crate::sequence::core::SequenceDbManager;
+use crate::sequence::SequenceManager;
 use crate::transfer::reader::TransferImportManager;
 use crate::transfer::writer::TransferWriterManager;
 use crate::{
@@ -182,11 +187,23 @@ pub async fn config_factory(sys_config: Arc<AppSysConfig>) -> anyhow::Result<Fac
         transfer_import_addr.clone(),
     ));
     factory.register(BeanDefinition::from_obj(raft_request_route));
-    let raft_data_wrap = Arc::new(RaftDataWrap {
+    let sequence_db_addr = SequenceDbManager::new().start();
+    factory.register(BeanDefinition::actor_from_obj(sequence_db_addr.clone()));
+    factory.register(BeanDefinition::actor_with_inject_from_obj(
+        SequenceManager::new().start(),
+    ));
+    factory.register(BeanDefinition::actor_from_obj(sequence_db_addr.clone()));
+    let mcp_manager = McpManager::new().start();
+    factory.register(BeanDefinition::actor_with_inject_from_obj(
+        mcp_manager.clone(),
+    ));
+
+    let raft_data_wrap = Arc::new(RaftDataHandler {
+        sequence_db: sequence_db_addr,
         config: config_addr.clone(),
         table: table_manage.clone(),
         namespace: namespace_addr.clone(),
-        //cache: cache_manager.clone(),
+        mcp_manager: mcp_manager.clone(),
     });
     factory.register(BeanDefinition::from_obj(raft_data_wrap));
     let metrics_manager = MetricsManager::new(sys_config.clone()).start();
@@ -197,6 +214,11 @@ pub async fn config_factory(sys_config: Arc<AppSysConfig>) -> anyhow::Result<Fac
     ));
     let health_manager = HealthManager::new().start();
     factory.register(BeanDefinition::actor_with_inject_from_obj(health_manager));
+    let ldap_manager =
+        LdapManager::new(sys_config.get_ldap_config(), sys_config.ldap_enable).start();
+    factory.register(BeanDefinition::actor_with_inject_from_obj(ldap_manager));
+    let sse_manager = SseStreamManager::new().start();
+    factory.register(BeanDefinition::actor_with_inject_from_obj(sse_manager));
     Ok(factory.init().await)
 }
 
@@ -208,6 +230,12 @@ pub fn build_share_data(factory_data: FactoryData) -> anyhow::Result<Arc<AppShar
         } else {
             Local::now().offset().fix()
         };
+    let reqwest_client = reqwest::Client::builder()
+        .timeout(Duration::from_millis(5000))
+        .danger_accept_invalid_certs(true)
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .unwrap();
     let app_data = Arc::new(AppShareData {
         config_addr: factory_data.get_actor().unwrap(),
         naming_addr: factory_data.get_actor().unwrap(),
@@ -232,7 +260,13 @@ pub fn build_share_data(factory_data: FactoryData) -> anyhow::Result<Arc<AppShar
         transfer_writer_manager: factory_data.get_actor().unwrap(),
         transfer_import_manager: factory_data.get_actor().unwrap(),
         health_manager: factory_data.get_actor().unwrap(),
+        ldap_manager: factory_data.get_actor().unwrap(),
+        sequence_manager: factory_data.get_actor().unwrap(),
+        sequence_db_manager: factory_data.get_actor().unwrap(),
+        mcp_manager: factory_data.get_actor().unwrap(),
+        sse_stream_manager: factory_data.get_actor().unwrap(),
         factory_data,
+        common_client: reqwest_client,
     });
     Ok(app_data)
 }

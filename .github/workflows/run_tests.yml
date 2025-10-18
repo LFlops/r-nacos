@@ -1,0 +1,22 @@
+name: run integration tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "master", "develop" ]
+  pull_request:
+    branches: [ "master", "develop" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: build 
+        run: |
+          cargo build
+      - name: run test
+        run: |
+          python3 integration_tests/scripts/run_test.py
