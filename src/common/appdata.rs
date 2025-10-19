@@ -2,6 +2,9 @@ use crate::common::AppSysConfig;
 use crate::config::core::ConfigActor;
 use crate::grpc::bistream_manage::BiStreamManage;
 use crate::health::core::HealthManager;
+use crate::ldap::core::LdapManager;
+use crate::mcp::core::McpManager;
+use crate::mcp::sse_manage::SseStreamManager;
 use crate::metrics::core::MetricsManager;
 use crate::namespace::NamespaceActor;
 use crate::naming::cluster::node_manage::{InnerNodeManage, NodeManage};
@@ -15,6 +18,8 @@ use crate::raft::db::table::TableManager;
 use crate::raft::filestore::core::FileStore;
 use crate::raft::network::factory::RaftClusterRequestSender;
 use crate::raft::NacosRaft;
+use crate::sequence::core::SequenceDbManager;
+use crate::sequence::SequenceManager;
 use crate::transfer::reader::TransferImportManager;
 use crate::transfer::writer::TransferWriterManager;
 use crate::user::UserManager;
@@ -48,4 +53,10 @@ pub struct AppShareData {
     pub transfer_writer_manager: Addr<TransferWriterManager>,
     pub transfer_import_manager: Addr<TransferImportManager>,
     pub health_manager: Addr<HealthManager>,
+    pub ldap_manager: Addr<LdapManager>,
+    pub sequence_db_manager: Addr<SequenceDbManager>,
+    pub sequence_manager: Addr<SequenceManager>,
+    pub mcp_manager: Addr<McpManager>,
+    pub sse_stream_manager: Addr<SseStreamManager>,
+    pub common_client: reqwest::Client,
 }

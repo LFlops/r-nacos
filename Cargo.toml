@@ -1,6 +1,6 @@
 [package]
 name = "rnacos"
-version = "0.6.14"
+version = "0.7.2"
 authors = ["heqingpan <heqingpan@126.com>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -22,6 +22,7 @@ exclude = [
     "CHANGELOG.md",
     "Dockerfile",
     "test_cluster.sh",
+    "integration_tests",
 ]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -31,6 +32,7 @@ exclude = [
 members = [
     ".",
     "loadtest",
+    "integration_tests/rust-client-test",
 ]
 
 [[bin]]
@@ -40,6 +42,9 @@ path = "src/main.rs"
 [features]
 default = []
 debug=[]
+
+[lints.clippy]
+uninlined_format_args = "allow"
 
 [dependencies]
 mimalloc = { version = "0.1", features = ["secure"] }
@@ -75,7 +80,7 @@ mime_guess = { version = "2" }
 rusqlite = { version = "0.25", features = ["bundled"] }
 rsql_builder = "0.1.5"
 inner-mem-cache = "0.1.7"
-rnacos-web-dist-wrap = "=0.5.12"
+rnacos-web-dist-wrap = "=0.7.2"
 nacos_rust_client = "0.3.2"
 zip = "0.6"
 tempfile = "3"
@@ -115,6 +120,10 @@ binrw = "0.13.3"
 binrw_derive = "0.13.3"
 sysinfo = "0.30.12"
 bcrypt = "0.15"
+ldap3 = { version="0.11", default-features = false, features = ["tls-rustls"] }
+reqwest = {version="0.11", default-features = false, features = ["stream", "rustls-tls", "json"]}
+rand = "0.8"
+serde_yml = "0.0.12"
 cargo-tarpaulin = "0.32.5"
 
 [target.'cfg(any(target_os = "linux", target_os = "macos", target_os="windows"))'.dependencies]

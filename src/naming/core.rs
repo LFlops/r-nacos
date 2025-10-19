@@ -50,11 +50,13 @@ use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::LinkedList;
+use std::default::Default;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 
 use crate::common::constant::EMPTY_ARC_STRING;
+use crate::common::model::privilege::NamespacePrivilegeGroup;
 use crate::metrics::metrics_key::MetricsKey;
 use crate::metrics::model::{MetricsItem, MetricsQuery, MetricsRecord};
 use crate::namespace::NamespaceActor;
@@ -266,6 +268,12 @@ impl NamingActor {
         }
     }
 
+    /// 单独订阅者通知
+    fn notify_to_subscriber(&mut self, _tag: &UpdateInstanceType, key: ServiceKey) {
+        self.subscriber.notify(key);
+    }
+
+    /// 变更通知，包含给其它集群节点通知和给本节点监听器通知
     fn do_notify(
         &mut self,
         tag: &UpdateInstanceType,
@@ -385,7 +393,7 @@ impl NamingActor {
         from_sync: bool,
     ) -> UpdateInstanceType {
         instance.init();
-        //assert!(instance.check_vaild());
+        //assert!(instance.check_valid());
         self.create_empty_service(key);
         //let is_from_from_cluster = instance.is_from_cluster();
         let at_process_range = if let Some(range) = &self.current_range {
@@ -419,6 +427,13 @@ impl NamingActor {
         let instance_short_key = instance.get_short_key();
 
         let (tag, replace_old_client_id) = service.update_instance(instance, tag, from_sync);
+        #[cfg(feature = "debug")]
+        log::info!(
+            "update_instance tag:{:?},key:{:?},replace_old_client_id:{:?}",
+            &tag,
+            instance_key,
+            &replace_old_client_id
+        );
         if let UpdateInstanceType::UpdateOtherClusterMetaData(_, _) = &tag {
             return tag;
         }
@@ -431,6 +446,9 @@ impl NamingActor {
             //change notify
             let instance = service.get_instance(&instance_short_key);
             self.do_notify(&tag, key.clone(), instance);
+        } else {
+            //如果不通知其它集群，则单独通知订阅者
+            self.notify_to_subscriber(&tag, key.clone());
         }
         tag
     }
@@ -673,6 +691,8 @@ impl NamingActor {
         (size, service_names)
     }
 
+    ///过程生成的不必要的临时对象过多,使用v2版本
+    #[deprecated]
     pub fn get_subscribers_list(
         &self,
         page_size: usize,
@@ -722,6 +742,35 @@ impl NamingActor {
             .collect::<Vec<_>>();
 
         (total, paginated_result)
+    }
+
+    pub fn get_subscribers_list_v2(
+        &self,
+        page_size: usize,
+        page_index: usize,
+        key: &ServiceKey,
+    ) -> (usize, Vec<SubscriberInfoDto>) {
+        let offset = if page_index == 0 {
+            0
+        } else {
+            page_size * (page_index - 1)
+        };
+        let param = ServiceQueryParam {
+            offset,
+            limit: page_size,
+            namespace_id: Some(key.namespace_id.clone()),
+            like_group: Some(key.group_name.as_ref().clone()),
+            like_service: Some(key.service_name.as_ref().clone()),
+            ..Default::default()
+        };
+        self.subscriber.query_service_listener_page(&param)
+    }
+
+    pub fn get_subscribers_list_by_param(
+        &self,
+        param: ServiceQueryParam,
+    ) -> (usize, Vec<SubscriberInfoDto>) {
+        self.subscriber.query_service_listener_page(&param)
     }
 
     pub fn get_service_info_page(&self, param: ServiceQueryParam) -> (usize, Vec<ServiceInfoDto>) {
@@ -1005,11 +1054,13 @@ pub enum NamingCmd {
     DeleteBatch(Vec<Instance>),
     Query(Instance),
     QueryList(ServiceKey, String, bool, Option<SocketAddr>),
+    SelectOneInstance(ServiceKey),
     QueryAllInstanceList(ServiceKey),
     QueryListString(ServiceKey, String, bool, Option<SocketAddr>),
     QueryServiceInfo(ServiceKey, String, bool),
     QueryServicePage(ServiceKey, usize, usize),
     QueryServiceSubscribersPage(ServiceKey, usize, usize),
+    QueryServiceSubscribersPageV2(ServiceQueryParam),
     //查询服务实际信息列表
     QueryServiceInfoPage(ServiceQueryParam),
     //CreateService(ServiceDetailDto),
@@ -1036,11 +1087,12 @@ pub enum NamingCmd {
 pub enum NamingResult {
     NULL,
     Instance(Arc<Instance>),
+    SelectInstance(Option<Arc<Instance>>),
     InstanceList(Vec<Arc<Instance>>),
     InstanceListString(String),
     ServiceInfo(ServiceInfo),
     ServicePage((usize, Vec<Arc<String>>)),
-    ServiceSubscribersPage((usize, Vec<Arc<SubscriberInfoDto>>)),
+    ServiceSubscribersPage((usize, Vec<SubscriberInfoDto>)),
     ServiceInfoPage((usize, Vec<ServiceInfoDto>)),
     ClientInstanceCount(Vec<(Arc<String>, usize)>),
     RewriteToCluster(u64, Instance),
@@ -1060,6 +1112,8 @@ impl Handler<NamingCmd> for NamingActor {
     type Result = anyhow::Result<NamingResult>;
 
     fn handle(&mut self, msg: NamingCmd, ctx: &mut Context<Self>) -> Self::Result {
+        //#[cfg(feature = "debug")]
+        //log::info!("NamingActor handle:{:?}", &msg);
         match msg {
             NamingCmd::Update(instance, tag) => {
                 let tag = self.update_instance(&instance.get_service_key(), instance, tag, false);
@@ -1140,12 +1194,15 @@ impl Handler<NamingCmd> for NamingActor {
             }
             NamingCmd::QueryServiceSubscribersPage(service_key, page_size, page_index) => {
                 Ok(NamingResult::ServiceSubscribersPage(
-                    self.get_subscribers_list(page_size, page_index, &service_key),
+                    self.get_subscribers_list_v2(page_size, page_index, &service_key),
                 ))
             }
             NamingCmd::QueryServiceInfoPage(param) => Ok(NamingResult::ServiceInfoPage(
                 self.get_service_info_page(param),
             )),
+            NamingCmd::QueryServiceSubscribersPageV2(param) => Ok(
+                NamingResult::ServiceSubscribersPage(self.get_subscribers_list_by_param(param)),
+            ),
             NamingCmd::PeekListenerTimeout => {
                 self.time_check();
                 //self.notify_check();
@@ -1225,6 +1282,14 @@ impl Handler<NamingCmd> for NamingActor {
                 } else {
                     Ok(NamingResult::InstanceList(vec![]))
                 }
+            }
+            NamingCmd::SelectOneInstance(service_key) => {
+                let v = if let Some(service) = self.service_map.get(&service_key) {
+                    service.select_one_instance(true, true)
+                } else {
+                    None
+                };
+                Ok(NamingResult::SelectInstance(v))
             }
             NamingCmd::QueryClientInstanceCount => {
                 let mut client_instance_count = Vec::with_capacity(self.client_instance_set.len());

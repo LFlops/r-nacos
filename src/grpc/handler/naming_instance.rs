@@ -60,7 +60,7 @@ impl InstanceRequestHandler {
             } else if let Some(v) = request.service_name {
                 Arc::new(v)
             } else {
-                return Err(anyhow::format_err!("serivceName is unvaild!"));
+                return Err(anyhow::format_err!("serviceName is invalid!"));
             };
             let now = now_millis_i64();
             let mut instance = Instance {
@@ -125,6 +125,7 @@ impl PayloadHandler for InstanceRequestHandler {
         };
         let mut response = InstanceResponse {
             request_id,
+            message: Some("".to_string()),
             ..Default::default()
         };
         match self.app_data.naming_addr.send(cmd).await {

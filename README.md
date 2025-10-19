@@ -5,11 +5,13 @@
 
 r-nacos是一个用rust实现的nacos服务。
 
-r-nacos是一个轻量、 快速、稳定、高性能的服务；包含注册中心、配置中心、web管理控制台功能，支持单机、集群部署。
+r-nacos是一个轻量、 快速、稳定、高性能的服务；包含注册中心、配置中心、MCP服务、web管理控制台功能，支持单机、集群部署。
 
 r-nacos设计上完全兼容最新版本nacos面向client sdk 的协议（包含1.x的http OpenApi，和2.x的grpc协议）, 支持使用nacos服务的应用平迁到 r-nacos。
 
 r-nacos相较于java nacos来说，是一个提供相同功能，启动更快、占用系统资源更小、性能更高、运行更稳定的服务。
+
+r-nacos支持mcp，内置mcp server与接口转发；支持让注册到r-nacos的普通http接口通过r-nacos直接转化成mcp服务对外提供服务。
 
 详细说明可以看 [r-nacos docs](https://r-nacos.github.io/docs/)和[deepwiki](https://deepwiki.com/nacos-group/r-nacos/)
 
@@ -192,6 +194,13 @@ k8s支持使用 [helm](https://github.com/nacos-group/r-nacos/tree/master/deploy
 |RNACOS_METRICS_COLLECT_INTERVAL_SECOND|监控指标采集指标间隔,单位秒,最小间隔为1秒,不能小于RNACOS_METRICS_LOG_INTERVAL_SECOND|15|5|0.5.14|
 |RNACOS_METRICS_LOG_INTERVAL_SECOND|监控指标采集打印到日志的间隔,单位秒,最小间隔为5秒|60|30|0.5.13|
 |RNACOS_CONSOLE_ENABLE_CAPTCHA| 验证码的开关| true|true|0.5.14|
+|RNACOS_LDAP_ENABLE|是否启用LDAP认证|false|false|0.6.19|
+|RNACOS_LDAP_URL|LDAP服务器地址|空字符串|ldap://localhost:389|0.6.19|
+|RNACOS_LDAP_USER_BASE_DN|LDAP用户基础DN|空字符串|ou=people,dc=example,dc=com|0.6.19|
+|RNACOS_LDAP_USER_FILTER|LDAP用户过滤器|空字符串|(&(objectClass=person)(uid=%s))|0.6.19|
+|RNACOS_LDAP_USER_DEVELOPER_GROUP|LDAP开发者角色包含的用户组(多个用逗号分隔，用户只要包含一个就是开发者)|空集合|dev_group1,dev_group2|0.6.19|
+|RNACOS_LDAP_USER_ADMIN_GROUP|LDAP管理员角色包含的用户组(多个用逗号分隔，用户只要包含一个就是管理员)|空集合|admin_group1,admin_group2|0.6.19|
+|RNACOS_LDAP_USER_DEFAULT_ROLE|LDAP用户默认角色,支持的值有：访客:VISITOR,开发者:DEVELOPER,管理员:ADMIN|VISITOR|DEVELOPER|0.6.19|
 
 启动配置方式可以参考： [运行参数说明](https://r-nacos.github.io/docs/notes/env_config/)
 
@@ -199,8 +208,8 @@ k8s支持使用 [helm](https://github.com/nacos-group/r-nacos/tree/master/deploy
 
 集群部署参考文档： 
 
-+ [集群部署](https://r-nacos.github.io/docs/notes/cluster_deploy)
-+ [集群部署样例](https://r-nacos.github.io/docs/notes/deploy_example/docker_cluster_deploy/)
++ [集群部署](https://r-nacos.github.io/docs/cluster_deploy/)
++ [集群部署样例](https://r-nacos.github.io/docs/deploy_example/docker_cluster_deploy/)
 
 
 ### 二、运行nacos 应用
@@ -379,6 +388,10 @@ nacos_rust_client = "0.3.0"
 
 ![](https://github.com/r-nacos/r-nacos/raw/master/doc/assets/imgs/20240722075241.png)
 
+> 8、MCP服务
+
+具体参考： https://r-nacos.github.io/docs/mcp-server/
+
 
 
 ## 功能说明
@@ -440,7 +453,7 @@ nacos_rust_client = "0.3.0"
 ### 三、面向部署、集群的功能
 
 1. 支持单机部署
-2. 支持集群部署。集群部署配置中心数据使用raft+节点本地存储组成的分布式存储，不需要依赖mysql。具体参考 [集群部署说明](https://r-nacos.github.io/docs/notes/deploy_example/docker_cluster_deploy/)
+2. 支持集群部署。集群部署配置中心数据使用raft+节点本地存储组成的分布式存储，不需要依赖mysql。具体参考 [集群部署说明](https://r-nacos.github.io/docs/deploy_example/docker_cluster_deploy/)
 
 
 ## 性能
@@ -459,7 +472,7 @@ nacos_rust_client = "0.3.0"
 **注：** 具体结果和压测环境有关
 
 详细信息可以参考
-[性能与容量说明](https://r-nacos.github.io/docs/notes/performance/)
+[性能与容量说明](https://r-nacos.github.io/docs/performance/)
 
 
 ## r-nacos架构图
@@ -476,8 +489,12 @@ nacos_rust_client = "0.3.0"
 
 r-nacos架构设计参考： 
 
-+ [架构](https://r-nacos.github.io/docs/notes/architecture/)
++ [架构](https://r-nacos.github.io/docs/architecture/)
 + [deepwiki architecture](https://deepwiki.com/nacos-group/r-nacos/2-system-architecture)
+
+### MCP架构
+
+![MCP架构图](https://raw.githubusercontent.com/r-nacos/r-nacos/master/doc/assets/imgs/r-nacos_mcp_L2.png)
 
 
 ## 使用登记
@@ -490,3 +507,11 @@ r-nacos架构设计参考：
 
 <img style="width: 200px;" width="200" src="https://github.com/r-nacos/r-nacos/raw/master/doc/assets/imgs/wechat.jpg" alt="qingpan2014" />
 
+
+## 贡献者
+
+Thanks goes to these wonderful people:
+
+<!-- START_CONTRIBUTORS -->
+[![Contributors](http://contrib.nn.ci/api?repo=nacos-group/r-nacos&repo=r-nacos/rnacos-console-web&repo=r-nacos/docs)](https://github.com/nacos-group/r-nacos/graphs/contributors)
+<!-- END_CONTRIBUTORS -->

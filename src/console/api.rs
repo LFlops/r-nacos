@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use super::cluster_api::query_cluster_info;
-use super::config_api::query_config_list;
+use super::config_api::{download_config_by_keys, query_config_list};
 use super::{
     config_api::{download_config, import_config, query_history_config_page},
     connection_api::query_grpc_connection,
@@ -171,7 +171,11 @@ pub fn console_api_config_v1(config: &mut web::ServiceConfig) {
             )
             .service(web::resource("/configs").route(web::get().to(query_config_list)))
             .service(web::resource("/config/import").route(web::post().to(import_config)))
-            .service(web::resource("/config/download").route(web::get().to(download_config)))
+            .service(
+                web::resource("/config/download")
+                    .route(web::get().to(download_config))
+                    .route(web::post().to(download_config_by_keys)),
+            )
             .service(
                 web::resource("/config/history").route(web::get().to(query_history_config_page)),
             )
@@ -285,6 +289,10 @@ pub fn console_api_config_v2(config: &mut web::ServiceConfig) {
                     .route(web::get().to(v2::naming_api::query_service_list)),
             )
             .service(
+                web::resource("/service/subscriber/list")
+                    .route(web::get().to(v2::naming_api::query_subscribers_list)),
+            )
+            .service(
                 web::resource("/service/add").route(web::post().to(v2::naming_api::add_service)),
             )
             .service(
@@ -324,6 +332,71 @@ pub fn console_api_config_v2(config: &mut web::ServiceConfig) {
                 web::resource("/metrics/timeline")
                     .route(web::get().to(v2::metrics_api::query_metrics_timeline))
                     .route(web::post().to(v2::metrics_api::query_metrics_timeline_json)),
+            )
+            .service(
+                web::resource("/mcp/toolspec/list")
+                    .route(web::get().to(v2::mcp_tool_spec_api::query_tool_spec_list)),
+            )
+            .service(
+                web::resource("/mcp/toolspec/info")
+                    .route(web::get().to(v2::mcp_tool_spec_api::get_tool_spec)),
+            )
+            .service(
+                web::resource("/mcp/toolspec/add")
+                    .route(web::post().to(v2::mcp_tool_spec_api::add_or_update_tool_spec)),
+            )
+            .service(
+                web::resource("/mcp/toolspec/update")
+                    .route(web::post().to(v2::mcp_tool_spec_api::add_or_update_tool_spec)),
+            )
+            .service(
+                web::resource("/mcp/toolspec/remove")
+                    .route(web::post().to(v2::mcp_tool_spec_api::remove_tool_spec)),
+            )
+            .service(
+                web::resource("/mcp/toolspec/batch_update")
+                    .route(web::post().to(v2::mcp_tool_spec_api::update_tool_specs)),
+            )
+            .service(
+                web::resource("/mcp/toolspec/download")
+                    .route(web::get().to(v2::mcp_tool_spec_api::download_tool_specs)),
+            )
+            .service(
+                web::resource("/mcp/toolspec/import")
+                    .route(web::post().to(v2::mcp_tool_spec_api::import_tool_specs)),
+            )
+            // McpServer控制台接口路由
+            .service(
+                web::resource("/mcp/server/list")
+                    .route(web::get().to(v2::mcp_server_api::query_mcp_server_list)),
+            )
+            .service(
+                web::resource("/mcp/server/info")
+                    .route(web::get().to(v2::mcp_server_api::get_mcp_server)),
+            )
+            .service(
+                web::resource("/mcp/server/add")
+                    .route(web::post().to(v2::mcp_server_api::add_mcp_server)),
+            )
+            .service(
+                web::resource("/mcp/server/update")
+                    .route(web::post().to(v2::mcp_server_api::update_mcp_server)),
+            )
+            .service(
+                web::resource("/mcp/server/remove")
+                    .route(web::post().to(v2::mcp_server_api::remove_mcp_server)),
+            )
+            .service(
+                web::resource("/mcp/server/history")
+                    .route(web::get().to(v2::mcp_server_api::query_mcp_server_history)),
+            )
+            .service(
+                web::resource("/mcp/server/publish")
+                    .route(web::post().to(v2::mcp_server_api::publish_current_mcp_server)),
+            )
+            .service(
+                web::resource("/mcp/server/publish/history")
+                    .route(web::post().to(v2::mcp_server_api::publish_history_mcp_server)),
             ),
     );
 }
