@@ -17,7 +17,7 @@ use crate::{
 
 pub mod model;
 pub mod route;
-pub mod routeapi;
+pub mod route_api;
 
 pub async fn handle_route(
     app: &Arc<AppShareData>,

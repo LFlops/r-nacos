@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::convert::TryInto;
 use std::fmt::{Display, Formatter};
 use std::{collections::HashMap, convert::TryFrom, sync::Arc};
 
@@ -68,12 +67,6 @@ pub struct CacheKey {
     pub key: Arc<String>,
 }
 
-impl CacheKey {
-    pub fn to_key_string(&self) -> String {
-        format!("{}\x00{}", self.cache_type.get_type_data(), &self.key)
-    }
-}
-
 impl Display for CacheKey {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}\x00{}", self.cache_type.get_type_data(), &self.key)
@@ -83,6 +76,10 @@ impl Display for CacheKey {
 impl CacheKey {
     pub fn new(cache_type: CacheType, key: Arc<String>) -> Self {
         Self { cache_type, key }
+    }
+
+    pub fn to_key_string(&self) -> String {
+        format!("{}\x00{}", self.cache_type.get_type_data(), &self.key)
     }
 
     pub fn from_db_key(db_key: Vec<u8>) -> anyhow::Result<Self> {
@@ -181,7 +178,51 @@ impl From<CacheValue> for CacheItemDo {
 
 #[cfg(test)]
 mod tests {
+    use std::convert::TryInto;
+
     use super::*;
+    // Test for CacheItemDo
+    #[test]
+    fn test_cache_item_do_to_bytes() {
+        let cache_item_do = CacheItemDo {
+            cache_type: 1,
+            data: b"test_data".to_vec(),
+            timeout: 10,
+        };
+        let bytes = cache_item_do.to_bytes();
+        let decoded = CacheItemDo::from_bytes(&bytes).unwrap();
+        assert_eq!(cache_item_do.cache_type, decoded.cache_type);
+        assert_eq!(cache_item_do.data, decoded.data);
+        assert_eq!(cache_item_do.timeout, decoded.timeout);
+    }
+
+    // Test for CacheKey
+    #[test]
+    fn test_cache_key_to_string() {
+        let cache_key = CacheKey {
+            cache_type: CacheType::default(),
+            key: Arc::new("test_key".to_string()),
+        };
+        let key_string = cache_key.to_key_string();
+        assert_eq!(key_string, "1\x00test_key".to_string());
+    }
+
+    #[test]
+    fn test_cache_type_from_data_with_invalid_data() {
+        let result = CacheType::from_data(5);
+        assert!(result.is_err());
+        if let Err(e) = result {
+            assert_eq!(e.to_string(), "unknown type from 5");
+        }
+    }
+
+    #[test]
+    fn test_cache_key_from_error_type() {
+        let db_key = b"1\x00test_key".to_vec();
+        let cache_key = CacheKey::from_db_key(db_key).unwrap();
+        assert_eq!(cache_key.cache_type, CacheType::String);
+        assert_eq!(*cache_key.key, "test_key".to_string());
+    }
 
     #[test]
     fn test_convert_cache_value_into_cache_item_do() {

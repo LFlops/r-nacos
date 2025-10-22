@@ -133,6 +133,11 @@ bitflags = "2.6.0"
 
 sqlx = { version = "0.6", features = ["runtime-tokio-rustls","mysql"] }
 
+[dev-dependencies]
+mockall = "0.12"           # 用于测试时的 Mocking
+anyhow = "1"              # 测试时的错误处理，方便快捷
+# tokio-test = "0.5"        # Tokio 的测试工具
+
 [dependencies.uuid]
 version = "1.2.1"
 features = [

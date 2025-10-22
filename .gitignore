@@ -9,6 +9,7 @@ naming.db
 nacos_db/
 .env
 cluster_example/
+lcov.info
 .kiro/
 
 __pycache__/
